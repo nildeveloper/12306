@@ -14,7 +14,7 @@ function getOneTradeAllStation()
 	local toStation="$3"
 	local dataGet="false"
 	local length=0
-	echo "获取 ${trainNo}"
+	# echo "获取 ${trainNo}"
 	while [[ "${dataGet:-false}" != "true" ]]; do
 		contents=$(curl "https://kyfw.12306.cn/otn/czxx/queryByTrainNo?train_no=${trainNo}&from_station_telecode=${fromStation}&to_station_telecode=${toStation}&depart_date=${fromDate}" \
 		-XGET -s \
@@ -32,7 +32,7 @@ function getOneTradeAllStation()
 		-H 'X-Requested-With: XMLHttpRequest' --compressed)
 
 		length=$(echo "$contents" | sed 's/null//g'| jq '.data.data|length')
-		# echo "length---${length} ${contents}"
+		
 		[ -z "$length" -o "0" == "${length}"  ] && { sleep 1 ; continue ; } || dataGet="true"
 
 		for (( i = 0; i < $length; i++ )); do
@@ -49,6 +49,9 @@ function getOneTradeAllStation()
 			end_station_name=$(echo "${timeTable}" | jq '.end_station_name')
 
 		    sql="insert ignore into train_time_table_12306 ( station_name,station_no,arrive_time,start_time,train_no,stop_time) values (${station_name},${station_no},${arrive_time},${start_time},${station_train_code},${stopover_time});"
+		    
+		    echo "${station_no} ${station_name}"
+
 		    echo "$sql" | mysql --login-path=local sns -N -f 
 
 		done
@@ -83,7 +86,7 @@ contentsTrains=$(curl "https://kyfw.12306.cn/otn/leftTicket/query?leftTicketDTO.
 -H 'X-Requested-With: XMLHttpRequest'  --compressed)
 
 length=$(echo "$contentsTrains" |sed 's/null//g'| jq '.data.result|length')
-echo "获取火车列表: ${length}"
+# echo "获取火车列表: ${length}"
 if [[ $length -eq 0 ]]; then
  	echo "获取失败结果是： ${contentsTrains}"
 fi 
@@ -91,7 +94,7 @@ fi
 
 trainArray=$(echo "${contentsTrains}" |jq '.data.result' )
 length=$(echo "${trainArray}" | jq 'length')
-#echo "trainArray : ${trainArray} ${length}"
+# echo "trainArray : ${trainArray} ${length}"
 for (( i = 0 ; i < $length ; i++ )); do
 	echo "i = $i"
 	train=$(echo "${trainArray}" | jq ".[$i]")
